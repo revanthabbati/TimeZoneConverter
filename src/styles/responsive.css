@@ -1,0 +1,47 @@
+@media (max-width: 640px) {
+  .card {
+    flex-direction: column;
+    text-align: center;
+  }
+  .card-left {
+    flex-direction: column;
+  }
+  .card-right {
+    justify-content: center;
+    width: 100%;
+  }
+  .input-box {
+    text-align: center;
+  }
+  input {
+    width: 100%;
+    max-width: 240px;
+  }
+  .brand .brand-text {
+    font-size: 1.05rem;
+  }
+  header {
+    justify-content: space-between;
+  }
+  .btn-current span {
+    display: none;
+  }
+  .kbd-hint {
+    display: none;
+  }
+  .drawer-panel {
+    width: 100vw;
+  }
+  /* Share/export duplicate into the Ctrl+K quick actions, so drop them from the toolbar
+     itself on narrow screens rather than let it wrap into a sparse, unevenly spaced row. */
+  #shareBtn,
+  #exportBtn {
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .brand .brand-text {
+    display: none;
+  }
+}

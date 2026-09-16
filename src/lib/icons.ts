@@ -1,0 +1,64 @@
+import {
+  createIcons,
+  Globe,
+  Globe2,
+  LayoutGrid,
+  GanttChartSquare,
+  Link2,
+  CalendarPlus,
+  Moon,
+  Sun,
+  Sunrise,
+  Sunset,
+  Monitor,
+  Settings,
+  Search,
+  Zap,
+  Star,
+  Copy,
+  Clock,
+  Trash2,
+  X,
+  Keyboard,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCcw,
+  PlusCircle,
+  Download,
+} from 'lucide';
+
+// Only the icons actually referenced by `data-lucide="..."` in the app. Named imports (rather
+// than the full `icons` barrel object) keep this tree-shakeable — lucide ships `sideEffects:
+// false` specifically so unused icons like these get dropped from the production bundle.
+const usedIcons = {
+  Globe,
+  Globe2,
+  LayoutGrid,
+  GanttChartSquare,
+  Link2,
+  CalendarPlus,
+  Moon,
+  Sun,
+  Sunrise,
+  Sunset,
+  Monitor,
+  Settings,
+  Search,
+  Zap,
+  Star,
+  Copy,
+  Clock,
+  Trash2,
+  X,
+  Keyboard,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCcw,
+  PlusCircle,
+  Download,
+};
+
+/** Scans the DOM for `data-lucide="name"` placeholders and inflates them into SVGs. */
+export function refreshIcons(): void {
+  createIcons({ icons: usedIcons });
+}
