@@ -1,5 +1,7 @@
-const CACHE_NAME = 'tzc-cache-v1';
-const APP_SHELL = ['/', '/index.html', '/icon.svg', '/manifest.webmanifest'];
+const CACHE_NAME = 'tzc-cache-v2';
+// Relative to this script's own URL, so this keeps working whether the app is served from a
+// domain root or a subpath (e.g. GitHub Pages project sites like /TimeZoneConverter/).
+const APP_SHELL = ['./', './index.html', './icon.svg', './manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
