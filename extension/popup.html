@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TimeZone Converter</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body data-theme="dark">
+
+<header>
+  <div class="brand">
+    <span class="brand-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    </span>
+    TimeZone Converter
+  </div>
+  <div class="toolbar">
+    <button type="button" class="icon-btn" id="formatBtn" title="Toggle 12/24 hour format">24h</button>
+    <button type="button" class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme"></button>
+  </div>
+</header>
+
+<div class="search-area">
+  <span class="search-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+  </span>
+  <input type="text" id="search" placeholder="Add a city or timezone..." autocomplete="off">
+</div>
+<div id="dropdown" class="dropdown"></div>
+
+<div id="list" class="zone-list"></div>
+
+<footer>
+  <a id="openApp" href="#" target="_blank" rel="noopener noreferrer">
+    Open full planner
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>
+  </a>
+</footer>
+
+<script src="popup.js"></script>
+</body>
+</html>

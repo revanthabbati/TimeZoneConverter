@@ -57,6 +57,11 @@ src/
 tests/     # Vitest unit tests for src/lib
 ```
 
+## Browser extension
+
+A companion Chrome/Edge toolbar extension lives in [`extension/`](extension/) — a popup with your
+saved cities' live time, no tab required. See [extension/README.md](extension/README.md) to load it.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
