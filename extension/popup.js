@@ -84,11 +84,60 @@ function searchTimeZones(query, limit) {
     .map((s) => s.tz);
 }
 
+// ---------- Time math (mirrors src/lib/time.ts) ----------
+
+function pad(n) {
+  return String(n).padStart(2, '0');
+}
+
+function getZoneParts(tz, at) {
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(at);
+  const hour24 = parseInt((parts.find((p) => p.type === 'hour') || {}).value || '0', 10);
+  const minute = parseInt((parts.find((p) => p.type === 'minute') || {}).value || '0', 10);
+  const ampm = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = hour24 % 12 || 12;
+  const dateISO = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(at);
+  return { hour24, minute, hour12, ampm, dateISO, pickerValue: `${pad(hour24)}:${pad(minute)}` };
+}
+
+// Converts a wall-clock date+time as observed in `tz` into the real instant it represents.
+// Standard round-trip trick since Intl has no direct "zoned wall time -> instant" API.
+function zonedWallTimeToInstant(dateStr, timeStr, tz) {
+  const iso = `${dateStr}T${timeStr}:00`;
+  const guess = new Date(iso);
+  const asInZone = new Date(guess.toLocaleString('en-US', { timeZone: tz }));
+  return new Date(guess.getTime() + (guess.getTime() - asInZone.getTime()));
+}
+
+function withAmPm(at, tz, target) {
+  const { hour24 } = getZoneParts(tz, at);
+  const next = new Date(at);
+  if (target === 'AM' && hour24 >= 12) next.setHours(next.getHours() - 12);
+  if (target === 'PM' && hour24 < 12) next.setHours(next.getHours() + 12);
+  return next;
+}
+
+function parseTimeInput12(raw, ampm) {
+  const m = raw.match(/(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  let hrs = parseInt(m[1], 10);
+  const mins = m[2];
+  if (ampm === 'PM' && hrs < 12) hrs += 12;
+  if (ampm === 'AM' && hrs === 12) hrs = 0;
+  if (hrs > 23) return null;
+  return `${pad(hrs)}:${mins}`;
+}
+
+// ---------- State ----------
+
 const state = {
   zones: ['Asia/Kolkata'],
   theme: 'dark',
   hourFormat: 24,
 };
+
+let masterDate = new Date();
+let isLive = true;
 
 async function loadState() {
   const stored = await chrome.storage.local.get(['zones', 'theme', 'hourFormat']);
@@ -107,6 +156,7 @@ const els = {
   list: document.getElementById('list'),
   themeBtn: document.getElementById('themeBtn'),
   formatBtn: document.getElementById('formatBtn'),
+  nowBtn: document.getElementById('nowBtn'),
   openApp: document.getElementById('openApp'),
 };
 
@@ -125,35 +175,69 @@ function applyFormat() {
   els.formatBtn.textContent = state.hourFormat === 24 ? '24h' : '12h';
 }
 
+function setLive(next) {
+  isLive = next;
+  els.nowBtn.classList.toggle('active', isLive);
+}
+
+function zoneCardHtml(tz, i) {
+  const hour12 = state.hourFormat === 12;
+  const parts = getZoneParts(tz, masterDate);
+  const timeValue = hour12 ? `${pad(parts.hour12)}:${pad(parts.minute)}` : parts.pickerValue;
+  return `
+    <div class="zone-card" data-tz="${tz}">
+      <div class="zone-top">
+        <div class="zone-info">
+          <div class="zone-name">${displayName(tz)}</div>
+          <div class="zone-meta">${abbrOf(tz, masterDate)} &middot; ${longNameOf(tz, masterDate)}</div>
+        </div>
+        <button type="button" class="remove-btn" data-remove="${i}" aria-label="Remove ${displayName(tz)}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+        </button>
+      </div>
+      <div class="zone-edit">
+        <input type="date" class="edit-date" data-role="date" value="${parts.dateISO}" aria-label="Date in ${displayName(tz)}">
+        <input type="${hour12 ? 'text' : 'time'}" class="edit-time" data-role="time" value="${timeValue}" aria-label="Time in ${displayName(tz)}">
+        ${
+          hour12
+            ? `<div class="ampm-toggle">
+                <button type="button" class="ampm-btn ${parts.ampm === 'AM' ? 'active' : ''}" data-ampm="AM">AM</button>
+                <button type="button" class="ampm-btn ${parts.ampm === 'PM' ? 'active' : ''}" data-ampm="PM">PM</button>
+              </div>`
+            : ''
+        }
+      </div>
+    </div>`;
+}
+
 function renderList() {
-  const at = new Date();
   if (!state.zones.length) {
     els.list.innerHTML = '<div class="empty">No cities yet — search above to add one.</div>';
     return;
   }
-  els.list.innerHTML = state.zones
-    .map((tz, i) => {
-      const hour12 = state.hourFormat === 12;
-      const time = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12 }).format(at);
-      const date = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short', month: 'short', day: 'numeric' }).format(at);
-      return `
-        <div class="zone-card">
-          <div class="zone-info">
-            <div class="zone-name">${displayName(tz)}</div>
-            <div class="zone-meta">${abbrOf(tz, at)} &middot; ${longNameOf(tz, at)}</div>
-          </div>
-          <div class="zone-right">
-            <div>
-              <div class="zone-time">${time}</div>
-              <div class="zone-date">${date}</div>
-            </div>
-            <button type="button" class="remove-btn" data-remove="${i}" aria-label="Remove ${displayName(tz)}">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
-            </button>
-          </div>
-        </div>`;
-    })
-    .join('');
+  els.list.innerHTML = state.zones.map((tz, i) => zoneCardHtml(tz, i)).join('');
+}
+
+/** Updates every card's inputs except `skipTz` in place, so the field the user is actively
+ * editing keeps focus and cursor position instead of being torn down mid-keystroke. */
+function syncOtherCards(skipTz) {
+  const hour12 = state.hourFormat === 12;
+  els.list.querySelectorAll('.zone-card').forEach((card) => {
+    const tz = card.dataset.tz;
+    if (tz === skipTz) return;
+    const parts = getZoneParts(tz, masterDate);
+    const dateInput = card.querySelector('[data-role="date"]');
+    const timeInput = card.querySelector('[data-role="time"]');
+    if (dateInput) dateInput.value = parts.dateISO;
+    if (timeInput) timeInput.value = hour12 ? `${pad(parts.hour12)}:${pad(parts.minute)}` : parts.pickerValue;
+    const metaEl = card.querySelector('.zone-meta');
+    if (metaEl) metaEl.textContent = `${abbrOf(tz, masterDate)} · ${longNameOf(tz, masterDate)}`;
+    if (hour12) {
+      const btns = card.querySelectorAll('.ampm-btn');
+      if (btns[0]) btns[0].classList.toggle('active', parts.ampm === 'AM');
+      if (btns[1]) btns[1].classList.toggle('active', parts.ampm === 'PM');
+    }
+  });
 }
 
 function renderDropdown(query) {
@@ -161,16 +245,15 @@ function renderDropdown(query) {
   if (!results.length) {
     els.dropdown.innerHTML = `<div class="drop-empty">${query ? 'No matches' : 'All popular cities already added'}</div>`;
   } else {
-    const at = new Date();
     els.dropdown.innerHTML = results
       .map(
         (tz) => `
         <div class="drop-item" data-add="${tz}">
           <div style="min-width:0">
             <b>${displayName(tz)}</b>
-            <div class="sub">${longNameOf(tz, at)}</div>
+            <div class="sub">${longNameOf(tz, masterDate)}</div>
           </div>
-          <span class="time">${new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: state.hourFormat === 12 }).format(at)}</span>
+          <span class="time">${new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: state.hourFormat === 12 }).format(masterDate)}</span>
         </div>`,
       )
       .join('');
@@ -196,6 +279,7 @@ function addZone(tz) {
 function updateOpenAppLink() {
   const url = new URL(APP_URL);
   url.searchParams.set('zones', state.zones.join(','));
+  url.searchParams.set('t', masterDate.toISOString());
   url.searchParams.set('f', String(state.hourFormat));
   els.openApp.href = url.toString();
 }
@@ -209,15 +293,52 @@ els.dropdown.addEventListener('click', (e) => {
   const item = e.target.closest('[data-add]');
   if (item) addZone(item.dataset.add);
 });
+
 els.list.addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-remove]');
-  if (btn) {
-    state.zones.splice(Number(btn.dataset.remove), 1);
+  const removeBtn = e.target.closest('[data-remove]');
+  if (removeBtn) {
+    state.zones.splice(Number(removeBtn.dataset.remove), 1);
     saveState();
     renderList();
     updateOpenAppLink();
+    return;
+  }
+  const ampmBtn = e.target.closest('[data-ampm]');
+  if (ampmBtn) {
+    const card = ampmBtn.closest('.zone-card');
+    setLive(false);
+    masterDate = withAmPm(masterDate, card.dataset.tz, ampmBtn.dataset.ampm);
+    card.querySelectorAll('.ampm-btn').forEach((b) => b.classList.toggle('active', b === ampmBtn));
+    syncOtherCards(card.dataset.tz);
+    updateOpenAppLink();
   }
 });
+
+els.list.addEventListener('input', (e) => {
+  const role = e.target.dataset.role;
+  if (!role) return;
+  const card = e.target.closest('.zone-card');
+  const tz = card.dataset.tz;
+  const hour12 = state.hourFormat === 12;
+  try {
+    const dateVal = card.querySelector('[data-role="date"]').value;
+    let timeVal = card.querySelector('[data-role="time"]').value;
+    if (!dateVal || !timeVal) return;
+    if (hour12 && role === 'time') {
+      const activeBtn = card.querySelector('.ampm-btn.active');
+      const parsed = parseTimeInput12(timeVal, activeBtn ? activeBtn.dataset.ampm : 'AM');
+      if (!parsed) return;
+      timeVal = parsed;
+    }
+    setLive(false);
+    masterDate = zonedWallTimeToInstant(dateVal, timeVal, tz);
+    syncOtherCards(tz);
+    updateOpenAppLink();
+  } catch {
+    /* invalid intermediate input while typing -- ignore until it parses */
+  }
+});
+
 els.themeBtn.addEventListener('click', () => {
   state.theme = state.theme === 'dark' ? 'light' : 'dark';
   saveState();
@@ -230,14 +351,26 @@ els.formatBtn.addEventListener('click', () => {
   renderList();
   updateOpenAppLink();
 });
+els.nowBtn.addEventListener('click', () => {
+  masterDate = new Date();
+  setLive(true);
+  renderList();
+  updateOpenAppLink();
+});
 
 async function init() {
   await loadState();
   applyTheme();
   applyFormat();
+  setLive(true);
   renderList();
   updateOpenAppLink();
-  setInterval(renderList, 1000);
+  setInterval(() => {
+    if (!isLive) return;
+    masterDate = new Date();
+    renderList();
+    updateOpenAppLink();
+  }, 1000);
 }
 
 init();

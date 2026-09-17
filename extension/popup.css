@@ -100,6 +100,14 @@ header {
   width: 14px;
   height: 14px;
 }
+#nowBtn {
+  gap: 4px;
+}
+#nowBtn.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-glow);
+}
 
 .search-area {
   position: relative;
@@ -194,7 +202,12 @@ header {
   border-radius: 11px;
   padding: 10px 12px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+}
+.zone-top {
+  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
 }
@@ -215,22 +228,56 @@ header {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.zone-right {
+.zone-edit {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
+  gap: 6px;
 }
-.zone-time {
+.edit-date,
+.edit-time {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-main);
+  border-radius: 7px;
+  padding: 5px 6px;
+  font-size: 0.75rem;
   font-family: ui-monospace, 'SF Mono', Consolas, monospace;
   font-weight: 700;
-  font-size: 1.05rem;
-  text-align: right;
+  outline: none;
+  min-width: 0;
 }
-.zone-date {
+.edit-date {
+  flex: 1.2;
+}
+.edit-time {
+  flex: 1;
+}
+.edit-date:focus,
+.edit-time:focus {
+  border-color: var(--primary);
+  background: var(--surface);
+}
+.ampm-toggle {
+  display: flex;
+  background: var(--surface-2);
+  border-radius: 7px;
+  padding: 2px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.ampm-btn {
+  border: none;
+  background: none;
+  color: var(--text-muted);
   font-size: 0.62rem;
-  color: var(--text-faint);
-  text-align: right;
+  font-weight: 800;
+  padding: 4px 6px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.ampm-btn.active {
+  background: var(--primary);
+  color: white;
 }
 .remove-btn {
   border: none;

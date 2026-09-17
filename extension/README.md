@@ -13,10 +13,13 @@ time, so you don't need to open a tab for a quick check.
 ## What it does
 
 - Search and add any IANA timezone or city; times update live once a second while the popup is open.
+- **Convert, not just display**: edit the date or time on any city and every other city updates to
+  match, same as the web app's cards. Editing pins the clock to that moment (the **Now** button
+  stops highlighting); click **Now** to jump back to live time and resume ticking.
 - Theme and 12h/24h format, same as the web app.
-- **Open full planner** at the bottom hands your current zones and format to the deployed web app
-  (via the same share-link query params it already supports), which opens straight into the
-  timeline/meeting-planner view with the same cities loaded.
+- **Open full planner** at the bottom hands your current zones, format, and the exact moment
+  you've set to the deployed web app (via the same share-link query params it already supports),
+  which opens straight into the timeline/meeting-planner view with the same cities and time loaded.
 
 ## Why it's a separate, self-contained app
 
