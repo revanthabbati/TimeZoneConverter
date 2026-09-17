@@ -25,6 +25,9 @@ import {
   RefreshCcw,
   PlusCircle,
   Download,
+  Users,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide';
 
 // Only the icons actually referenced by `data-lucide="..."` in the app. Named imports (rather
@@ -56,6 +59,9 @@ const usedIcons = {
   RefreshCcw,
   PlusCircle,
   Download,
+  Users,
+  ChevronLeft,
+  ChevronRight,
 };
 
 /** Scans the DOM for `data-lucide="name"` placeholders and inflates them into SVGs. */

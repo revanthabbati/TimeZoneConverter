@@ -1,7 +1,17 @@
 .timeline-view {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  position: relative;
+}
+
+.timeline-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 2px;
 }
 
 .timeline-legend {
@@ -11,7 +21,6 @@
   align-items: center;
   font-size: 0.72rem;
   color: var(--text-muted);
-  margin-bottom: 6px;
 }
 .timeline-legend .dot {
   display: inline-block;
@@ -21,10 +30,63 @@
   margin-right: 5px;
 }
 
+.timeline-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.timeline-nav .tool-btn {
+  font-size: 0.72rem;
+}
+
+/* ---------- Overlap ruler: highlights hours where every zone is in business hours ---------- */
+.overlap-ruler {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.overlap-ruler-label {
+  width: 168px;
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.overlap-ruler-label svg {
+  width: 12px;
+  height: 12px;
+  color: var(--success);
+}
+.overlap-ruler-track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.overlap-cell {
+  flex: 1;
+}
+.overlap-cell.good {
+  background: var(--success);
+  opacity: 0.75;
+}
+
 .timeline-row {
   display: flex;
   align-items: stretch;
   gap: 12px;
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease);
+}
+.timeline-row:hover {
+  background: color-mix(in srgb, var(--surface-2) 60%, transparent);
 }
 .timeline-row.you .timeline-track {
   border-color: var(--primary);
@@ -34,10 +96,42 @@
   width: 168px;
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 6px 0;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
   min-width: 0;
+}
+.tl-phase {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+.tl-phase svg {
+  width: 14px;
+  height: 14px;
+}
+.tl-phase.phase-day {
+  background: var(--success);
+  color: #06281c;
+}
+.tl-phase.phase-dawn,
+.tl-phase.phase-dusk {
+  background: var(--warning);
+  color: #2b1c00;
+}
+.tl-phase.phase-night {
+  background: var(--primary);
+  color: white;
+}
+.tl-text {
+  min-width: 0;
+  flex: 1;
 }
 .timeline-label .tl-name {
   font-weight: 800;
@@ -54,6 +148,27 @@
   color: var(--text-muted);
   font-family: var(--font-mono);
 }
+.tl-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.timeline-row:hover .tl-actions,
+.timeline-row:focus-within .tl-actions {
+  opacity: 1;
+}
+.icon-btn.sm {
+  padding: 5px;
+}
+.icon-btn.sm svg {
+  width: 13px;
+  height: 13px;
+}
+.icon-btn.active-star {
+  color: var(--warning);
+}
 
 .timeline-track {
   flex: 1;
@@ -65,7 +180,7 @@
   overflow: hidden;
   border: 1px solid var(--border);
   background: var(--surface-2);
-  cursor: pointer;
+  cursor: ew-resize;
   touch-action: none;
 }
 
@@ -152,6 +267,41 @@
     box-shadow: 0 0 0 5px var(--primary-glow);
   }
 }
+.now-grip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--primary);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.timeline-track:hover .now-grip {
+  opacity: 0.9;
+}
+
+.scrub-tip {
+  position: absolute;
+  top: -34px;
+  transform: translateX(-50%);
+  background: var(--text-main);
+  color: var(--bg);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease);
+  z-index: 10;
+}
+.scrub-tip.visible {
+  opacity: 1;
+}
 
 .timeline-hint {
   font-size: 0.72rem;
@@ -161,10 +311,17 @@
 }
 
 @media (max-width: 700px) {
-  .timeline-label {
+  .timeline-label,
+  .overlap-ruler-label {
     width: 108px;
   }
   .timeline-label .tl-meta {
+    display: none;
+  }
+  .tl-actions {
+    display: none;
+  }
+  .overlap-ruler-label span {
     display: none;
   }
   .timeline-cell {
