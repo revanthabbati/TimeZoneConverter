@@ -317,6 +317,11 @@ els.list.addEventListener('click', (e) => {
 els.list.addEventListener('input', (e) => {
   const role = e.target.dataset.role;
   if (!role) return;
+  // Stop the once-a-second live tick as soon as the user touches a field, *before* any parsing
+  // that might bail out early below — otherwise a tick mid-keystroke (e.g. a native time input
+  // reads as "" until both hour and minute are filled in) rebuilds the whole list and wipes
+  // whatever they'd typed so far, which looks exactly like "won't let me edit".
+  setLive(false);
   const card = e.target.closest('.zone-card');
   const tz = card.dataset.tz;
   const hour12 = state.hourFormat === 12;
@@ -330,13 +335,15 @@ els.list.addEventListener('input', (e) => {
       if (!parsed) return;
       timeVal = parsed;
     }
-    setLive(false);
     masterDate = zonedWallTimeToInstant(dateVal, timeVal, tz);
     syncOtherCards(tz);
     updateOpenAppLink();
   } catch {
     /* invalid intermediate input while typing -- ignore until it parses */
   }
+});
+els.list.addEventListener('focusin', (e) => {
+  if (e.target.dataset.role) setLive(false);
 });
 
 els.themeBtn.addEventListener('click', () => {
